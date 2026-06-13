@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f0f2f5; padding: 20px; }
+        .container {
+            max-width: 600px; margin: 0 auto; background: white;
+            padding: 30px; border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 { color: #333; margin-bottom: 10px; }
+        .info { color: #555; margin-bottom: 20px; }
+        .logout {
+            display: inline-block; padding: 10px 20px;
+            background: #f44336; color: white; text-decoration: none;
+            border-radius: 5px;
+        }
+        .logout:hover { background: #d32f2f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome, {{ name }}</h2>
+        <p class="info">Roll Number: {{ roll_number }} | Class: {{ class_name }}-{{ section }}</p>
+        <p class="info">Email: {{ email }}</p>
+        <a href="/logout" class="logout">Logout</a>
+    </div>
+</body>
+</html>

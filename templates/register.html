@@ -1,19 +1,168 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Student Registration</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Smart Attendance</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .logo { text-align: center; font-size: 40px; margin-bottom: 10px; }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-group { margin-bottom: 18px; flex: 1; }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus { outline: none; border-color: #667eea; }
+
+        .file-upload {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            border: 2px dashed #c5c5f5;
+            border-radius: 8px;
+            background: #f8f8ff;
+            cursor: pointer;
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .file-upload:hover { background: #f0f0ff; }
+
+        input[type="file"] { display: none; }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .link a { color: #667eea; text-decoration: none; font-weight: 600; }
+    </style>
 </head>
 <body>
-    <h2>Student Registration</h2>
-    <form method="POST" action="/register" enctype="multipart/form-data">
-        <input type="text" name="name" placeholder="Full Name" required><br><br>
-        <input type="text" name="roll_number" placeholder="Roll Number" required><br><br>
-        <input type="text" name="class_name" placeholder="Class (e.g. CSE-A)" required><br><br>
-        <input type="text" name="section" placeholder="Section" required><br><br>
-        <input type="email" name="email" placeholder="Email" required><br><br>
-        <input type="password" name="password" placeholder="Password" required><br><br>
-        <input type="file" name="photo" accept="image/*" required><br><br>
-        <button type="submit">Register</button>
-    </form>
+    <div class="container">
+        <div class="logo">📋</div>
+        <h2>Create Account</h2>
+        <p class="subtitle">Student Registration</p>
+
+        <form method="POST" action="/register" enctype="multipart/form-data">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Roll Number</label>
+                    <input type="text" name="roll_number" required>
+                </div>
+                <div class="form-group">
+                    <label>Section</label>
+                    <input type="text" name="section" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Class</label>
+                <input type="text" name="class_name" placeholder="e.g. CSE-A" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+
+            <div class="form-group">
+                <label>Profile Photo</label>
+                <label class="file-upload" id="fileLabel">
+                    📷 Choose Photo
+                    <input type="file" name="photo" accept="image/*" required
+                           onchange="document.getElementById('fileLabel').innerText = this.files[0].name">
+                </label>
+            </div>
+
+            <button type="submit" class="btn">Register</button>
+        </form>
+
+        <p class="link">Already have an account? <a href="/login">Login here</a></p>
+    </div>
 </body>
 </html>

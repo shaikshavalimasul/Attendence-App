@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash
 import os
 from flask import Flask
 import mysql.connector
@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app=Flask(__name__)
+
+app.secret_key = os.getenv("SECRET_KEY")
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -23,7 +25,7 @@ def get_db_connection():
 
 @app.route('/')
 def home():
-    return "Flask is connected to Mysql !"
+    return redirect(url_for('login'))
 
 @app.route('/add-test-student')
 def add_test_student():
@@ -84,6 +86,53 @@ def register():
         return "Registration successful!"
 
     return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM students WHERE email = %s", (email,))
+        student = cursor.fetchone()
+        conn.close()
+
+        if student and check_password_hash(student[6], password):
+            session['student_id'] = student[0]
+            session['name'] = student[1]
+            return redirect(url_for('student_dashboard'))
+        else:
+            return render_template('login.html', error="Invalid email or password")
+
+    return render_template('login.html')
+
+
+@app.route('/student-dashboard')
+def student_dashboard():
+    if 'student_id' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM students WHERE student_id = %s", (session['student_id'],))
+    student = cursor.fetchone()
+    conn.close()
+
+    return render_template('student_dashboard.html',
+        name=student[1],
+        roll_number=student[2],
+        class_name=student[3],
+        section=student[4],
+        email=student[5]
+    )
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 if __name__=='__main__':
     app.run(debug=True)

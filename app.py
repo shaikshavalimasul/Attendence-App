@@ -1,6 +1,12 @@
+from flask import Flask, render_template, request
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
+import os
 from flask import Flask
 import mysql.connector
-import os
+import cloudinary
+import cloudinary.uploader
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -40,6 +46,44 @@ def show_students():
     conn.close()
     return str(students)
 
+
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form['name']
+        roll_number = request.form['roll_number']
+        class_name = request.form['class_name']
+        section = request.form['section']
+        email = request.form['email']
+        password = request.form['password']
+        photo = request.files['photo']
+
+        hashed_password = generate_password_hash(password)
+
+        # Upload to Cloudinary instead of local disk
+        upload_result = cloudinary.uploader.upload(photo)
+        photo_url = upload_result['secure_url']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO students (name, roll_number, class_name, section, email, password, photo_path)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (name, roll_number, class_name, section, email, hashed_password, photo_url))
+        conn.commit()
+        conn.close()
+
+        return "Registration successful!"
+
+    return render_template('register.html')
 
 if __name__=='__main__':
     app.run(debug=True)

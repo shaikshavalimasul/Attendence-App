@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+
+        body { background: #f0f2f5; padding: 20px; }
+
+        .navbar {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .navbar h2 { color: #333; font-size: 20px; }
+
+        .logout {
+            padding: 8px 18px;
+            background: #f44336;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .logout:hover { background: #d32f2f; }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        h3 { color: #333; margin-bottom: 20px; }
+
+        .form-row { display: flex; gap: 10px; }
+
+        .form-group { margin-bottom: 18px; flex: 1; }
+
+        label { display: block; margin-bottom: 6px; color: #555; font-weight: 600; font-size: 14px; }
+
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        input:focus { outline: none; border-color: #667eea; }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .success {
+            background: #e7f9ed;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .badge {
+            background: #e7f9ed;
+            color: #2e7d32;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>🔑 Admin Dashboard</h2>
+        <a href="/logout" class="logout">Logout</a>
+    </div>
+
+    <div class="container">
+        <h3>Add New Teacher</h3>
+
+        {% if success %}
+            <p class="success">{{ success }}</p>
+        {% endif %}
+
+        <form method="POST" action="/add-teacher">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Subject</label>
+                    <input type="text" name="subject" required>
+                </div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <input type="text" name="department" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Employee ID</label>
+                <input type="text" name="employee_id" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn">Add Teacher</button>
+        </form>
+
+        <h3 style="margin-top:30px">All Teachers</h3>
+        <table>
+            <tr>
+                <th>Teacher ID</th>
+                <th>Name</th>
+                <th>Subject</th>
+                <th>Email</th>
+                <th>Status</th>
+            </tr>
+            {% for teacher in teachers %}
+            <tr>
+                <td>{{ teacher[1] }}</td>
+                <td>{{ teacher[2] }}</td>
+                <td>{{ teacher[5] }}</td>
+                <td>{{ teacher[3] }}</td>
+                <td><span class="badge">Active</span></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

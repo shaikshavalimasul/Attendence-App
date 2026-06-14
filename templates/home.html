@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Attendance System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo { font-size: 50px; margin-bottom: 10px; }
+
+        h1 { color: #333; font-size: 26px; margin-bottom: 5px; }
+
+        .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
+
+        .role-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-decoration: none;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+        }
+
+        .role-card:hover {
+            border-color: #667eea;
+            background: #f8f8ff;
+        }
+
+        .role-icon { font-size: 28px; }
+
+        .role-text { text-align: left; }
+
+        .role-title { color: #333; font-weight: 600; font-size: 16px; }
+
+        .role-desc { color: #888; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📋</div>
+        <h1>Smart Attendance</h1>
+        <p class="subtitle">Choose your role to continue</p>
+
+        <a href="/student-login" class="role-card">
+            <div class="role-icon">🎓</div>
+            <div class="role-text">
+                <div class="role-title">Student</div>
+                <div class="role-desc">Mark attendance, view records</div>
+            </div>
+        </a>
+
+        <a href="/teacher-login" class="role-card">
+            <div class="role-icon">👨‍🏫</div>
+            <div class="role-text">
+                <div class="role-title">Teacher</div>
+                <div class="role-desc">Create sessions, view reports</div>
+            </div>
+        </a>
+
+        <a href="/admin-login" class="role-card">
+            <div class="role-icon">🔑</div>
+            <div class="role-text">
+                <div class="role-title">Admin</div>
+                <div class="role-desc">Manage teachers and records</div>
+            </div>
+        </a>
+    </div>
+</body>
+</html>

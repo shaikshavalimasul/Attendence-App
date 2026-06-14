@@ -25,7 +25,7 @@ def get_db_connection():
 
 @app.route('/')
 def home():
-    return redirect(url_for('login'))
+    return render_template('home.html')
 
 @app.route('/add-test-student')
 def add_test_student():
@@ -133,6 +133,74 @@ def student_dashboard():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+
+
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM admin WHERE email = %s", (email,))
+        admin_user = cursor.fetchone()
+        conn.close()
+
+        if admin_user and (admin_user[3]==password):
+            session['admin_id'] = admin_user[0]
+            session['admin_name'] = admin_user[1]
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return render_template('admin_login.html', error="Invalid email or password")
+
+    return render_template('admin_login.html')
+
+
+@app.route('/admin-dashboard')
+def admin_dashboard():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM teachers")
+    teachers = cursor.fetchall()
+    conn.close()
+
+    return render_template('admin_dashboard.html', teachers=teachers)
+
+
+@app.route('/add-teacher', methods=['POST'])
+def add_teacher():
+    if 'admin_id' not in session:
+        return redirect(url_for('admin_login'))
+
+    name = request.form['name']
+    subject = request.form['subject']
+    department = request.form['department']
+    employee_id = request.form['employee_id']
+    email = request.form['email']
+    password = request.form['password']
+
+    hashed_password = generate_password_hash(password)
+    unique_teacher_id = "TCH" + employee_id
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO teachers (unique_teacher_id, name, email, password, subject, department, employee_id, approved_by)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """, (unique_teacher_id, name, email, hashed_password, subject, department, employee_id, session['admin_id']))
+    conn.commit()
+
+    cursor.execute("SELECT * FROM teachers")
+    teachers = cursor.fetchall()
+    conn.close()
+
+    return render_template('admin_dashboard.html', teachers=teachers, success=f"Teacher added! Unique ID: {unique_teacher_id}")
+
 
 if __name__=='__main__':
     app.run(debug=True)

@@ -6,9 +6,6 @@ from flask import Flask
 import mysql.connector
 import cloudinary
 import cloudinary.uploader
-import qrcode
-import io
-import base64
 import random
 from datetime import datetime, timedelta
 
@@ -227,27 +224,22 @@ def teacher_dashboard():
     cursor.execute("SELECT * FROM teachers WHERE teacher_id = %s", (session['teacher_id'],))
     teacher = cursor.fetchone()
 
+    current_time = datetime.now()
+
     cursor.execute("""
         SELECT * FROM sessions
-        WHERE teacher_id = %s AND is_active = TRUE AND end_time > NOW()
+        WHERE teacher_id = %s AND is_active = TRUE AND end_time > %s
         ORDER BY session_id DESC LIMIT 1
-    """, (session['teacher_id'],))
+    """, (session['teacher_id'], current_time))
     active_session = cursor.fetchone()
 
     conn.close()
-
-    qr_code = None
-    if active_session:
-        qr_data = f"session:{active_session[0]}"
-        qr_code = generate_qr_base64(qr_data)
-
     return render_template('teacher_dashboard.html',
         name=teacher[2],
         unique_teacher_id=teacher[1],
         subject=teacher[5],
         department=teacher[6],
         active_session=active_session,
-        qr_code=qr_code
     )
 
 
@@ -295,17 +287,30 @@ def show_student_dashboard(message=None, message_type=None):
     WHERE student_teacher_mapping.student_id = %s
      """, (session['student_id'],))
     subjects = cursor.fetchall()
+    current_time = datetime.now()
+
+    cursor.execute("""
+        SELECT sessions.*, teachers.name
+        FROM sessions
+        JOIN student_teacher_mapping ON sessions.teacher_id = student_teacher_mapping.teacher_id
+        JOIN teachers ON sessions.teacher_id = teachers.teacher_id
+        WHERE student_teacher_mapping.student_id = %s
+          AND sessions.is_active = TRUE
+          AND sessions.end_time > %s
+    """, (session['student_id'], current_time))
+    active_sessions = cursor.fetchall()
     conn.close()
 
     return render_template('student_dashboard.html',
-        name=student[1],
-        roll_number=student[2],
-        class_name=student[3],
-        section=student[4],
-        subjects=subjects,
-        message=message,
-        message_type=message_type
-    )
+    name=student[1],
+    roll_number=student[2],
+    class_name=student[3],
+    section=student[4],
+    subjects=subjects,
+    active_sessions=active_sessions,
+    message=message,
+    message_type=message_type
+)
 
 @app.route('/leave-subject', methods=['POST'])
 def leave_subject():
@@ -359,18 +364,49 @@ def start_session():
     return redirect(url_for('teacher_dashboard'))
 
 
-def generate_qr_base64(data):
-    qr = qrcode.QRCode(box_size=8, border=2)
-    qr.add_data(data)
-    qr.make()
-    img = qr.make_image(fill_color="black", back_color="white")
+@app.route('/submit-code', methods=['POST'])
+def submit_code():
+    if 'student_id' not in session:
+        return redirect(url_for('login'))
 
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    img_bytes = buffer.getvalue()
+    session_id = request.form['session_id']
+    entered_code = request.form['entered_code'].strip()
 
-    return base64.b64encode(img_bytes).decode('utf-8')
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    cursor.execute("SELECT * FROM sessions WHERE session_id = %s", (session_id,))
+    session_row = cursor.fetchone()
+
+    if not session_row:
+        conn.close()
+        return show_student_dashboard(message="Session not found.", message_type="error")
+
+    actual_code = session_row[6]
+    code_match = (entered_code == actual_code)
+
+    if not code_match:
+        conn.close()
+        return show_student_dashboard(message="Incorrect code. Please try again.", message_type="error")
+
+    cursor.execute("""
+        SELECT * FROM attendance 
+        WHERE session_id = %s AND student_id = %s
+    """, (session_id, session['student_id']))
+    existing = cursor.fetchone()
+
+    if existing:
+        conn.close()
+        return show_student_dashboard(message="You have already submitted attendance for this session.", message_type="error")
+
+    cursor.execute("""
+        INSERT INTO attendance (session_id, student_id, code_match, ai_status)
+        VALUES (%s, %s, %s, %s)
+    """, (session_id, session['student_id'], code_match, 'Pending'))
+    conn.commit()
+    conn.close()
+
+    return show_student_dashboard(message="Code verified! (GPS and selfie verification coming next)", message_type="success")
 
 
 if __name__=='__main__':

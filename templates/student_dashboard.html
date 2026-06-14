@@ -116,6 +116,47 @@
 
 .delete-btn:hover { background: #f8d7da; }
 
+
+.session-alert {
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: #f8f8ff;
+}
+
+.session-subject { color: #333; font-weight: 700; font-size: 16px; }
+.session-detail { color: #888; font-size: 13px; margin: 4px 0; }
+.session-timer { color: #f44336; font-weight: 600; font-size: 13px; margin-bottom: 10px; }
+
+.code-form {
+    display: flex;
+    gap: 8px;
+}
+
+.code-form input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 18px;
+    letter-spacing: 4px;
+    text-align: center;
+}
+
+.code-form input:focus { outline: none; border-color: #667eea; }
+
+.btn-small {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
     </style>
 </head>
 <body>
@@ -142,6 +183,28 @@
         </form>
     </div>
 
+<div class="container" id="activeSessionContainer">
+    {% if active_sessions %}
+        <h3>📍 Active Attendance Sessions</h3>
+        {% for sess in active_sessions %}
+        <div class="session-alert" data-session-id="{{ sess[0] }}" data-end-time="{{ sess[11] }}">
+            <div class="session-info">
+                <div class="session-subject">{{ sess[2] }}</div>
+                <div class="session-detail">{{ sess[3] }}-{{ sess[4] }} | Teacher: {{ sess[13] }}</div>
+                <div class="session-timer">Closes in <span class="timer-value">--:--</span></div>
+            </div>
+
+            <form method="POST" action="/submit-code" class="code-form">
+                <input type="hidden" name="session_id" value="{{ sess[0] }}">
+                <input type="text" name="entered_code" placeholder="Enter 4-digit code" maxlength="4" required>
+                <button type="submit" class="btn-small">Submit</button>
+            </form>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+
     <div class="container">
         <h3>My Subjects</h3>
 
@@ -162,5 +225,33 @@
     <p class="empty">You haven't joined any subjects yet</p>
 {% endif %}
     </div>
+
+<script>
+    // Find all active session boxes and start their countdown timers
+    document.querySelectorAll('.session-alert').forEach(function(box) {
+        const endTime = new Date(box.dataset.endTime).getTime();
+        const timerSpan = box.querySelector('.timer-value');
+
+        function updateTimer() {
+            const now = new Date().getTime();
+            const remaining = endTime - now;
+
+            if (remaining <= 0) {
+                timerSpan.textContent = "Closed";
+                box.querySelector('.code-form').style.display = 'none';
+                return;
+            }
+
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            timerSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            setTimeout(updateTimer, 1000);
+        }
+
+        updateTimer();
+    });
+</script>
+
 </body>
 </html>

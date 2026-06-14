@@ -202,5 +202,46 @@ def add_teacher():
     return render_template('admin_dashboard.html', teachers=teachers, success=f"Teacher added! Unique ID: {unique_teacher_id}")
 
 
+@app.route('/teacher-login', methods=['GET', 'POST'])
+def teacher_login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM teachers WHERE email = %s", (email,))
+        teacher = cursor.fetchone()
+        conn.close()
+
+        if teacher and check_password_hash(teacher[4], password):
+            session['teacher_id'] = teacher[0]
+            session['teacher_name'] = teacher[2]
+            return redirect(url_for('teacher_dashboard'))
+        else:
+            return render_template('teacher_login.html', error="Invalid email or password")
+
+    return render_template('teacher_login.html')
+
+
+@app.route('/teacher-dashboard')
+def teacher_dashboard():
+    if 'teacher_id' not in session:
+        return redirect(url_for('teacher_login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM teachers WHERE teacher_id = %s", (session['teacher_id'],))
+    teacher = cursor.fetchone()
+    conn.close()
+
+    return render_template('teacher_dashboard.html',
+        name=teacher[2],
+        unique_teacher_id=teacher[1],
+        subject=teacher[5],
+        department=teacher[6]
+    )
+
+
 if __name__=='__main__':
     app.run(debug=True)

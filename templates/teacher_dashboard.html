@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+
+        body { background: #f0f2f5; padding: 20px; }
+
+        .navbar {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .navbar h2 { color: #333; font-size: 20px; }
+
+        .logout {
+            padding: 8px 18px;
+            background: #f44336;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .logout:hover { background: #d32f2f; }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .welcome { color: #333; margin-bottom: 5px; font-size: 22px; }
+        .info { color: #888; font-size: 14px; margin-bottom: 25px; }
+
+        .id-box {
+            background: #f8f8ff;
+            border: 2px dashed #c5c5f5;
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .id-label { color: #888; font-size: 13px; margin-bottom: 5px; }
+        .id-value {
+            color: #667eea;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .id-hint { color: #aaa; font-size: 12px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>👨‍🏫 Teacher Dashboard</h2>
+        <a href="/logout" class="logout">Logout</a>
+    </div>
+
+    <div class="container">
+        <h3 class="welcome">Welcome, {{ name }}</h3>
+        <p class="info">{{ subject }} | {{ department }}</p>
+
+        <div class="id-box">
+            <div class="id-label">Your Unique Teacher ID</div>
+            <div class="id-value">{{ unique_teacher_id }}</div>
+            <div class="id-hint">Share this with your students so they can join your subject</div>
+        </div>
+    </div>
+</body>
+</html>

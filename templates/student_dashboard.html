@@ -5,29 +5,162 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+
         body { background: #f0f2f5; padding: 20px; }
-        .container {
-            max-width: 600px; margin: 0 auto; background: white;
-            padding: 30px; border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+        .navbar {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        h2 { color: #333; margin-bottom: 10px; }
-        .info { color: #555; margin-bottom: 20px; }
+
+        .navbar h2 { color: #333; font-size: 20px; }
+
         .logout {
-            display: inline-block; padding: 10px 20px;
-            background: #f44336; color: white; text-decoration: none;
-            border-radius: 5px;
+            padding: 8px 18px;
+            background: #f44336;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
         }
+
         .logout:hover { background: #d32f2f; }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .welcome { color: #333; margin-bottom: 5px; font-size: 22px; }
+        .info { color: #888; font-size: 14px; margin-bottom: 0; }
+
+        h3 { color: #333; margin-bottom: 15px; }
+
+        .join-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            text-transform: uppercase;
+        }
+
+        input:focus { outline: none; border-color: #667eea; }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .success { background: #e7f9ed; color: #2e7d32; }
+        .error { background: #fdecea; color: #d32f2f; }
+
+        .subject-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .subject-name { color: #333; font-weight: 600; font-size: 15px; }
+        .subject-teacher { color: #888; font-size: 13px; margin-top: 2px; }
+
+        .empty { color: #aaa; text-align: center; padding: 20px; font-size: 14px; }
+
+
+
+.delete-btn {
+    background: #fdecea;
+    border: none;
+    color: #d32f2f;
+    font-size: 16px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.delete-btn:hover { background: #f8d7da; }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Welcome, {{ name }}</h2>
-        <p class="info">Roll Number: {{ roll_number }} | Class: {{ class_name }}-{{ section }}</p>
-        <p class="info">Email: {{ email }}</p>
+    <div class="navbar">
+        <h2>🎓 Student Dashboard</h2>
         <a href="/logout" class="logout">Logout</a>
+    </div>
+
+    <div class="container">
+        <h3 class="welcome">Welcome, {{ name }}</h3>
+        <p class="info">Roll Number: {{ roll_number }} | Class: {{ class_name }}-{{ section }}</p>
+    </div>
+
+    <div class="container">
+        <h3>Join a Subject</h3>
+
+        {% if message %}
+            <p class="message {{ message_type }}">{{ message }}</p>
+        {% endif %}
+
+        <form method="POST" action="/join-subject" class="join-form">
+            <input type="text" name="teacher_id" placeholder="Enter Teacher ID (e.g. TCH045)" required>
+            <button type="submit" class="btn">Join</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h3>My Subjects</h3>
+
+       {% if subjects %}
+    {% for subject in subjects %}
+    <div class="subject-card">
+        <div>
+            <div class="subject-name">{{ subject[0] }}</div>
+            <div class="subject-teacher">Teacher: {{ subject[1] }}</div>
+        </div>
+        <form method="POST" action="/leave-subject" onsubmit="return confirm('Leave this subject?');">
+            <input type="hidden" name="mapping_id" value="{{ subject[2] }}">
+            <button type="submit" class="delete-btn">🗑️</button>
+        </form>
+    </div>
+    {% endfor %}
+{% else %}
+    <p class="empty">You haven't joined any subjects yet</p>
+{% endif %}
     </div>
 </body>
 </html>

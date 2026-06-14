@@ -6,6 +6,11 @@ from flask import Flask
 import mysql.connector
 import cloudinary
 import cloudinary.uploader
+import qrcode
+import io
+import base64
+import random
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 
@@ -87,8 +92,8 @@ def register():
 
     return render_template('register.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+@app.route('/student-login', methods=['GET', 'POST'])
+def student_login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -104,35 +109,22 @@ def login():
             session['name'] = student[1]
             return redirect(url_for('student_dashboard'))
         else:
-            return render_template('login.html', error="Invalid email or password")
+            return render_template('student-login.html', error="Invalid email or password")
 
-    return render_template('login.html')
+    return render_template('student-login.html')
 
 
 @app.route('/student-dashboard')
 def student_dashboard():
     if 'student_id' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM students WHERE student_id = %s", (session['student_id'],))
-    student = cursor.fetchone()
-    conn.close()
-
-    return render_template('student_dashboard.html',
-        name=student[1],
-        roll_number=student[2],
-        class_name=student[3],
-        section=student[4],
-        email=student[5]
-    )
+        return redirect(url_for('student_login'))
+    return show_student_dashboard()
 
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('student_login'))
 
 
 
@@ -231,16 +223,154 @@ def teacher_dashboard():
 
     conn = get_db_connection()
     cursor = conn.cursor()
+
     cursor.execute("SELECT * FROM teachers WHERE teacher_id = %s", (session['teacher_id'],))
     teacher = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT * FROM sessions
+        WHERE teacher_id = %s AND is_active = TRUE AND end_time > NOW()
+        ORDER BY session_id DESC LIMIT 1
+    """, (session['teacher_id'],))
+    active_session = cursor.fetchone()
+
     conn.close()
+
+    qr_code = None
+    if active_session:
+        qr_data = f"session:{active_session[0]}"
+        qr_code = generate_qr_base64(qr_data)
 
     return render_template('teacher_dashboard.html',
         name=teacher[2],
         unique_teacher_id=teacher[1],
         subject=teacher[5],
-        department=teacher[6]
+        department=teacher[6],
+        active_session=active_session,
+        qr_code=qr_code
     )
+
+
+@app.route('/join-subject', methods=['POST'])
+def join_subject():
+    if 'student_id' not in session:
+        return redirect(url_for('login'))
+
+    teacher_id_entered = request.form['teacher_id'].strip().upper()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM teachers WHERE unique_teacher_id = %s", (teacher_id_entered,))
+    teacher = cursor.fetchone()
+
+    if not teacher:
+        conn.close()
+        return show_student_dashboard(message="Teacher ID not found. Please check and try again.", message_type="error")
+
+    try:
+        cursor.execute("""
+            INSERT INTO student_teacher_mapping (student_id, teacher_id, subject, class_name, section)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (session['student_id'], teacher[0], teacher[5], teacher[6], ''))
+        conn.commit()
+        conn.close()
+        return show_student_dashboard(message=f"Successfully joined {teacher[5]}!", message_type="success")
+
+    except mysql.connector.IntegrityError:
+        conn.close()
+        return show_student_dashboard(message="You have already joined this subject.", message_type="error")
+
+def show_student_dashboard(message=None, message_type=None):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM students WHERE student_id = %s", (session['student_id'],))
+    student = cursor.fetchone()
+
+    cursor.execute("""
+    SELECT teachers.subject, teachers.name, student_teacher_mapping.mapping_id
+    FROM student_teacher_mapping
+    JOIN teachers ON student_teacher_mapping.teacher_id = teachers.teacher_id
+    WHERE student_teacher_mapping.student_id = %s
+     """, (session['student_id'],))
+    subjects = cursor.fetchall()
+    conn.close()
+
+    return render_template('student_dashboard.html',
+        name=student[1],
+        roll_number=student[2],
+        class_name=student[3],
+        section=student[4],
+        subjects=subjects,
+        message=message,
+        message_type=message_type
+    )
+
+@app.route('/leave-subject', methods=['POST'])
+def leave_subject():
+    if 'student_id' not in session:
+        return redirect(url_for('student-login'))
+
+    mapping_id = request.form['mapping_id']
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        DELETE FROM student_teacher_mapping 
+        WHERE mapping_id = %s AND student_id = %s
+    """, (mapping_id, session['student_id']))
+    conn.commit()
+    conn.close()
+
+    return show_student_dashboard(message="Subject removed.", message_type="success")
+
+
+
+@app.route('/start-session', methods=['POST'])
+def start_session():
+    if 'teacher_id' not in session:
+        return redirect(url_for('teacher_login'))
+
+    subject = request.form['subject']
+    class_name = request.form['class_name']
+    section = request.form['section']
+    radius = request.form['radius']
+    latitude = request.form['latitude']
+    longitude = request.form['longitude']
+
+    four_digit_code = str(random.randint(1000, 9999))
+
+    start_time = datetime.now()
+    end_time = start_time + timedelta(minutes=5)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO sessions (teacher_id, subject, class_name, section, session_date,
+                               four_digit_code, radius_meters, teacher_latitude,
+                               teacher_longitude, start_time, end_time, is_active)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (session['teacher_id'], subject, class_name, section, start_time.date(),
+          four_digit_code, radius, latitude, longitude, start_time, end_time, True))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('teacher_dashboard'))
+
+
+def generate_qr_base64(data):
+    qr = qrcode.QRCode(box_size=8, border=2)
+    qr.add_data(data)
+    qr.make()
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    img_bytes = buffer.getvalue()
+
+    return base64.b64encode(img_bytes).decode('utf-8')
+
 
 
 if __name__=='__main__':

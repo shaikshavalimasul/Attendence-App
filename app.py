@@ -38,6 +38,11 @@ def get_db_connection():
 def home():
     return render_template('home.html')
 
+
+@app.route('/debug-time')
+def debug_time():
+    return f"python datetime.now(): {datetime.now()}"
+
 @app.route('/add-test-student')
 def add_test_student():
     conn=get_db_connection()

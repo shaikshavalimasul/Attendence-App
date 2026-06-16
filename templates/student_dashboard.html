@@ -157,17 +157,53 @@
     cursor: pointer;
 }
 
+.gps-status {
+    font-size: 12px;
+    color: #888;
+    margin-top: 6px;
+}
+
+.gps-status.ready { color: #2e7d32; }
+.gps-status.error { color: #d32f2f; }
+
+.selfie-video, .selfie-preview {
+    width: 100%;
+    max-width: 280px;
+    border-radius: 10px;
+    margin: 10px 0;
+    border: 3px solid #667eea;
+}
+
+.selfie-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.selfie-buttons .btn-small { flex: 1; }
+
+.welcome-row { display: flex; align-items: center; gap: 15px; }
+.dash-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea; }
+
+
+
     </style>
 </head>
 <body>
     <div class="navbar">
         <h2>🎓 Student Dashboard</h2>
-        <a href="/logout" class="logout">Logout</a>
+        <a href="/profile" class="logout" style="background:#667eea;">Profile</a>
+<a href="/logout" class="logout">Logout</a>
     </div>
 
     <div class="container">
+        <div class="welcome-row">
+    <img src="{{ photo_path }}" class="dash-photo" alt="Profile">
+    <div>
         <h3 class="welcome">Welcome, {{ name }}</h3>
         <p class="info">Roll Number: {{ roll_number }} | Class: {{ class_name }}-{{ section }}</p>
+    </div>
+</div>
     </div>
 
     <div class="container">
@@ -191,14 +227,42 @@
             <div class="session-info">
                 <div class="session-subject">{{ sess[2] }}</div>
                 <div class="session-detail">{{ sess[3] }}-{{ sess[4] }} | Teacher: {{ sess[13] }}</div>
-                <div class="session-timer">Closes in <span class="timer-value">--:--</span></div>
+                <div class="session-timer">Session is  <span class="timer-value">--:--</span></div>
             </div>
 
-            <form method="POST" action="/submit-code" class="code-form">
-                <input type="hidden" name="session_id" value="{{ sess[0] }}">
-                <input type="text" name="entered_code" placeholder="Enter 4-digit code" maxlength="4" required>
-                <button type="submit" class="btn-small">Submit</button>
-            </form>
+            <form method="POST" action="/submit-code" class="code-form" onsubmit="return prepareSubmit(event, this);">
+    <input type="hidden" name="session_id" value="{{ sess[0] }}">
+    <input type="hidden" name="latitude" class="lat-field">
+    <input type="hidden" name="longitude" class="lng-field">
+    <input type="text" name="entered_code" placeholder="Enter 4-digit code" maxlength="4" required>
+    <button type="submit" class="btn-small">Submit</button>
+</form>
+<p class="gps-status">📍 Getting your location...</p>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="container" id="pendingSelfieContainer">
+    {% if pending_sessions %}
+        <h3>📸 Selfie Verification Required</h3>
+        {% for p in pending_sessions %}
+        <div class="session-alert">
+            <div class="session-info">
+                <div class="session-subject">{{ p[1] }}</div>
+                <div class="session-detail">Code and location verified. Take a selfie to complete.</div>
+            </div>
+
+            <video class="selfie-video" id="video-{{ p[0] }}" autoplay playsinline></video>
+            <canvas id="canvas-{{ p[0] }}" style="display:none"></canvas>
+            <img id="preview-{{ p[0] }}" class="selfie-preview" style="display:none">
+
+            <div class="selfie-buttons">
+                <button type="button" class="btn-small" onclick="startCamera({{ p[0] }})">Start Camera</button>
+                <button type="button" class="btn-small" id="capture-{{ p[0] }}" onclick="captureSelfie({{ p[0] }})" disabled>Capture</button>
+            </div>
+
+            <p class="gps-status" id="status-{{ p[0] }}"></p>
         </div>
         {% endfor %}
     {% endif %}
@@ -226,6 +290,26 @@
 {% endif %}
     </div>
 
+    <div class="container">
+    <h3>📊 Attendance Percentage</h3>
+    {% if percentage_data %}
+        {% for p in percentage_data %}
+        {% set pct = (p[2] / p[1] * 100) if p[1] > 0 else 0 %}
+        <div class="subject-card">
+            <div>
+                <div class="subject-name">{{ p[0] }}</div>
+                <div class="subject-teacher">{{ p[2] }}/{{ p[1] }} classes attended</div>
+            </div>
+            <div style="font-weight:700; color: {% if pct >= 75 %}#2e7d32{% elif pct >= 60 %}#f57f17{% else %}#d32f2f{% endif %};">
+                {{ "%.0f"|format(pct) }}%
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty">No attendance records yet.</p>
+    {% endif %}
+</div>
+
 <script>
     // Find all active session boxes and start their countdown timers
     document.querySelectorAll('.session-alert').forEach(function(box) {
@@ -251,6 +335,102 @@
 
         updateTimer();
     });
+</script>
+
+<script>
+    // Capture GPS location ONCE when page loads, store globally
+    let studentLatitude = null;
+    let studentLongitude = null;
+
+    document.querySelectorAll('.gps-status').forEach(function(statusEl) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                studentLatitude = position.coords.latitude;
+                studentLongitude = position.coords.longitude;
+
+                statusEl.textContent = "📍 Location ready";
+                statusEl.classList.add('ready');
+            },
+            function(error) {
+                statusEl.textContent = "⚠️ Location access denied - attendance may fail location check";
+                statusEl.classList.add('error');
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    });
+
+    // Called when student clicks Submit
+    function prepareSubmit(event, form) {
+        if (studentLatitude === null || studentLongitude === null) {
+            alert("Location not available yet. Please wait a moment and try again.");
+            event.preventDefault();
+            return false;
+        }
+
+        form.querySelector('.lat-field').value = studentLatitude;
+        form.querySelector('.lng-field').value = studentLongitude;
+
+        return true;
+    }
+</script>
+<script>
+    const cameraStreams = {};
+
+   async function startCamera(sessionId) {
+    const video = document.getElementById('video-' + sessionId);
+    const preview = document.getElementById('preview-' + sessionId);
+    const captureBtn = document.getElementById('capture-' + sessionId);
+    const status = document.getElementById('status-' + sessionId);
+
+    preview.style.display = 'none';
+    video.style.display = 'block';
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        video.srcObject = stream;
+        cameraStreams[sessionId] = stream;
+        captureBtn.disabled = false;
+        status.textContent = "Camera ready. Click Capture.";
+    } catch (error) {
+        status.textContent = "Camera access denied.";
+    }
+}
+
+    function captureSelfie(sessionId) {
+        const video = document.getElementById('video-' + sessionId);
+        const canvas = document.getElementById('canvas-' + sessionId);
+        const preview = document.getElementById('preview-' + sessionId);
+        const status = document.getElementById('status-' + sessionId);
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+
+        const photoData = canvas.toDataURL('image/jpeg', 0.8);
+        preview.src = photoData;
+        preview.style.display = 'block';
+        video.style.display = 'none';
+
+        if (cameraStreams[sessionId]) {
+            cameraStreams[sessionId].getTracks().forEach(track => track.stop());
+        }
+
+        status.textContent = "Verifying face... please wait.";
+
+        fetch('/verify-selfie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId, selfie: photoData })
+        })
+        .then(response => response.json())
+        .then(data => {
+            status.textContent = (data.success ? "✅ " : "❌ ") + data.message;
+            if (data.success) setTimeout(() => location.reload(), 2000);
+        })
+        .catch(error => {
+            status.textContent = "Error verifying face. Please try again.";
+        });
+    }
 </script>
 
 </body>

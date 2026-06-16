@@ -119,7 +119,7 @@
             <p class="error">{{ error }}</p>
         {% endif %}
 
-        <form method="POST" action="/student-login">
+        <form method="POST" action="/student_login">
             <div class="form-group">
                 <label>Email</label>
                 <input type="email" name="email" required>
@@ -130,8 +130,9 @@
             </div>
             <button type="submit" class="btn">Login</button>
         </form>
-
+<p class="link"><a href="/forgot-password">Forgot Password?</a></p>
         <p class="link">Don't have an account? <a href="/register">Register here</a></p>
+        <p class="link"><a href="/">← Back to Home</a></p>
     </div>
 </body>
 </html>

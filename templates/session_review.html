@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Review</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #f0f2f5; padding: 20px; }
+        .navbar { background: white; padding: 15px 25px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .navbar h2 { color: #333; font-size: 20px; }
+        .back { padding: 8px 18px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h3 { color: #333; margin-bottom: 15px; }
+        .summary-row { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .summary-box { flex: 1; min-width: 100px; background: #f8f8ff; border-radius: 10px; padding: 15px; text-align: center; }
+        .summary-num { font-size: 24px; font-weight: 700; color: #667eea; }
+        .summary-label { font-size: 12px; color: #888; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #667eea; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        select { padding: 6px 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 13px; }
+        input[type="text"].reason { width: 100%; padding: 6px 8px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 12px; }
+        .status-present { background: #e7f9ed; color: #2e7d32; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .status-absent { background: #fdecea; color: #d32f2f; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .btn { padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+        .download-row { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .download-btn { flex: 1; min-width: 140px; padding: 12px; background: #f8f8ff; border: 2px solid #667eea; color: #667eea; border-radius: 8px; text-decoration: none; text-align: center; font-size: 13px; font-weight: 600; }
+        .session-list-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 10px; text-decoration: none; color: #333; }
+        .session-list-item:hover { background: #f8f8ff; }
+        .empty { color: #aaa; text-align: center; padding: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>📋 Session Review</h2>
+        <a href="/teacher-dashboard" class="back">← Dashboard</a>
+    </div>
+
+    {% if not selected_session %}
+        <div class="container">
+            <h3>Select a Session</h3>
+            {% if sessions_list %}
+                {% for s in sessions_list %}
+                <a href="/session-review/{{ s[0] }}" class="session-list-item">
+                    <div>
+                        <strong>{{ s[2] }}</strong> - {{ s[3] }}-{{ s[4] }}
+                        <div style="font-size:12px;color:#888;">{{ s[5] }}</div>
+                    </div>
+                    <span>→</span>
+                </a>
+                {% endfor %}
+            {% else %}
+                <p class="empty">No past sessions yet.</p>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="container">
+            <h3>{{ selected_session[2] }} - {{ selected_session[3] }}-{{ selected_session[4] }} ({{ selected_session[5] }})</h3>
+
+            <div class="summary-row">
+                <div class="summary-box"><div class="summary-num">{{ total_students }}</div><div class="summary-label">Total</div></div>
+                <div class="summary-box"><div class="summary-num">{{ present_count }}</div><div class="summary-label">Present</div></div>
+                <div class="summary-box"><div class="summary-num">{{ absent_count }}</div><div class="summary-label">Absent</div></div>
+                <div class="summary-box"><div class="summary-num">{{ percentage }}%</div><div class="summary-label">Attendance</div></div>
+            </div>
+
+            <form method="POST" action="/confirm-attendance/{{ selected_session[0] }}">
+                <table>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Name</th>
+                        <th>AI Status</th>
+                        <th>Final Status</th>
+                        <th>Reason (if changed)</th>
+                    </tr>
+                    {% for row in attendance_rows %}
+                    <tr>
+                        <td>{{ row[1] }}</td>
+                        <td>{{ row[0] }}</td>
+                        <td>
+                            {% if row[3] == 'Present' %}<span class="status-present">Present</span>
+                            {% else %}<span class="status-absent">Absent</span>{% endif %}
+                        </td>
+                        <td>
+                            <select name="status_{{ row[2] }}">
+                                <option value="Present" {% if row[3] == 'Present' %}selected{% endif %}>Present</option>
+                                <option value="Absent" {% if row[3] == 'Absent' %}selected{% endif %}>Absent</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="reason" name="reason_{{ row[2] }}" placeholder="Optional reason">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+
+                <button type="submit" class="btn">Confirm Attendance</button>
+            </form>
+
+            <div class="download-row">
+                <a href="/download-summary/{{ selected_session[0] }}/pdf" class="download-btn">📄 Summary PDF</a>
+                <a href="/download-summary/{{ selected_session[0] }}/csv" class="download-btn">📊 Summary CSV</a>
+                <a href="/download-complete/{{ selected_session[0] }}/pdf" class="download-btn">📄 Complete PDF</a>
+                <a href="/download-complete/{{ selected_session[0] }}/csv" class="download-btn">📊 Complete CSV</a>
+            </div>
+        </div>
+    {% endif %}
+</body>
+</html>

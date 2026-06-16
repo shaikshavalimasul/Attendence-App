@@ -138,17 +138,39 @@
 
         .error { background: #fdecea; color: #d32f2f; }
         .success { background: #e7f9ed; color: #2e7d32; }
+
+        .dash-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea; }
+
+        .attendance-live { margin-top: 20px; text-align: left; }
+.attendance-live h4 { color: #333; margin-bottom: 10px; font-size: 15px; }
+
+.mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mini-table th { background: #667eea; color: white; padding: 8px; text-align: left; }
+.mini-table td { padding: 8px; border-bottom: 1px solid #eee; }
+
+.status-present { background: #e7f9ed; color: #2e7d32; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.status-absent { background: #fdecea; color: #d32f2f; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.status-pending { background: #fff8e1; color: #f57f17; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+
+.empty { color: #aaa; text-align: center; padding: 15px; font-size: 13px; }
     </style>
 </head>
 <body>
     <div class="navbar">
         <h2>👨‍🏫 Teacher Dashboard</h2>
-        <a href="/logout" class="logout">Logout</a>
+        <a href="/profile" class="logout" style="background:#667eea;">Profile</a>
+        <a href="/session-review" class="logout" style="background:#667eea;">Review Sessions</a>
+<a href="/logout" class="logout">Logout</a>
     </div>
 
     <div class="container">
+        <div class="welcome-row">
+    <img src="{{ photo_path }}" class="dash-photo" alt="Profile">
+    <div>
         <h3 class="welcome">Welcome, {{ name }}</h3>
         <p class="info">{{ subject }} | {{ department }}</p>
+    </div>
+</div>
     </div>
 
     <div class="container">
@@ -171,6 +193,45 @@
                 </div>
 
                 <div class="timer" id="timer">Loading...</div>
+                <div class="attendance-live">
+    <h4>📋 Live Attendance ({{ session_attendance|length }} submitted)</h4>
+    {% if session_attendance %}
+        <table class="mini-table">
+            <tr>
+                <th>Roll No</th>
+                <th>Name</th>
+                <th>Code</th>
+                <th>Location</th>
+                <th>Face</th>
+                <th>Status</th>
+            </tr>
+            {% for row in session_attendance %}
+            <tr>
+                <td>{{ row[1] }}</td>
+                <td>{{ row[0] }}</td>
+                <td>{{ "✅" if row[2] else "❌" }}</td>
+                <td>{{ "✅" if row[3] else "❌" }}</td>
+                <td>{% if row[4] is none %}⏳{% elif row[4] %}✅{% else %}❌{% endif %}</td>
+                <td>
+                    {% if row[5] == 'Present' %}
+                        <span class="status-present">Present</span>
+                    {% elif row[5] == 'Absent' %}
+                        <span class="status-absent">Absent</span>
+                    {% else %}
+                        <span class="status-pending">Pending</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p class="empty">No submissions yet.</p>
+    {% endif %}
+</div>
+
+<script>
+    setTimeout(() => location.reload(), 10000);
+</script>
             </div>
 
             <script>

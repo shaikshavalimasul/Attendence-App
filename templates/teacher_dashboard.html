@@ -235,7 +235,7 @@
             </div>
 
             <script>
-                const sessionEndTime = new Date("{{ active_session[11].strftime('%Y-%m-%dT%H:%M:%S') }}").getTime();
+                const sessionEndTime = new Date("{{ active_session[11].strftime('%Y-%m-%dT%H:%M:%S') }}Z").getTime();
 
 console.log("Current Browser Time:", new Date());
 console.log("Session End Time:", new Date("{{ active_session[11].strftime('%Y-%m-%dT%H:%M:%S') }}"));

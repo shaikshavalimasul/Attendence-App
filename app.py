@@ -52,6 +52,30 @@ def debug_time():
     MySQL Time: {mysql_now}
     """
 
+
+@app.route('/debug-session')
+def debug_session():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT session_id, start_time, end_time, is_active
+        FROM sessions
+        ORDER BY session_id DESC
+        LIMIT 1
+    """)
+
+    row = cursor.fetchone()
+
+    conn.close()
+
+    return f"""
+    Python Now: {datetime.now()}<br>
+    Session Start: {row[1]}<br>
+    Session End: {row[2]}<br>
+    Active: {row[3]}
+    """
+
 @app.route('/add-test-student')
 def add_test_student():
     conn=get_db_connection()

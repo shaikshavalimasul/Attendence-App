@@ -223,7 +223,9 @@
     {% if active_sessions %}
         <h3>📍 Active Attendance Sessions</h3>
         {% for sess in active_sessions %}
-        <div class="session-alert" data-session-id="{{ sess[0] }}" data-end-time="{{ sess[11] }}">
+        <div class="session-alert"
+     data-session-id="{{ sess[0] }}"
+     data-end-time="{{ sess[11].isoformat() }}Z">
             <div class="session-info">
                 <div class="session-subject">{{ sess[2] }}</div>
                 <div class="session-detail">{{ sess[3] }}-{{ sess[4] }} | Teacher: {{ sess[13] }}</div>

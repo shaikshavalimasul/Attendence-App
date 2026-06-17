@@ -330,6 +330,9 @@ def teacher_dashboard():
     """, (session['teacher_id'], current_time))
     active_session = cursor.fetchone()
 
+    print("current time:",current_time)
+    print("Active Session=",active_session)
+
     session_attendance = []
     if active_session:
         cursor.execute("""

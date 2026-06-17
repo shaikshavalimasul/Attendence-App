@@ -414,6 +414,8 @@ def show_student_dashboard(message=None, message_type=None):
     """, (session['student_id'], current_time))
     active_sessions = cursor.fetchall()
 
+    print("ACTIVE SESSIONS =", active_sessions)
+
     cursor.execute("""
     SELECT attendance.session_id, sessions.subject
     FROM attendance

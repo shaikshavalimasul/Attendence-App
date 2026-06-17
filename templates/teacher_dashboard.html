@@ -235,7 +235,10 @@
             </div>
 
             <script>
-                const sessionEndTime = new Date("{{ active_session[11] }}").getTime();
+                const sessionEndTime = new Date("{{ active_session[11].strftime('%Y-%m-%dT%H:%M:%S') }}").getTime();
+
+console.log("Current Browser Time:", new Date());
+console.log("Session End Time:", new Date("{{ active_session[11].strftime('%Y-%m-%dT%H:%M:%S') }}"));
 
                 function updateTimer() {
                     const now = new Date().getTime();

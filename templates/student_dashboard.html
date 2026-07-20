@@ -315,7 +315,9 @@
 <script>
     // Find all active session boxes and start their countdown timers
     document.querySelectorAll('.session-alert').forEach(function(box) {
-        const endTime = new Date(box.dataset.endTime).getTime();
+        // const endTime = new Date(box.dataset.endTime).getTime();
+
+        const endTime = new Date(box.dataset.endTime.replace(' ', 'T') + "+00:00").getTime();
         const timerSpan = box.querySelector('.timer-value');
 
         function updateTimer() {

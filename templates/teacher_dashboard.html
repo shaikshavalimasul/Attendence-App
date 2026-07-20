@@ -192,6 +192,19 @@
                     <div class="code-value">{{ active_session[6] }}</div>
                 </div>
 
+                <form method="POST" action="/stop-session">
+    <button type="submit"
+            style="background:#f44336;
+                   color:white;
+                   border:none;
+                   padding:10px 20px;
+                   border-radius:8px;
+                   cursor:pointer;
+                   margin-top:10px;">
+        ⛔ Stop Session
+    </button>
+</form>
+
                 <div class="timer" id="timer">Loading...</div>
                 <div class="attendance-live">
     <h4>📋 Live Attendance ({{ session_attendance|length }} submitted)</h4>
@@ -235,30 +248,57 @@
             </div>
 
             <script>
-                const sessionEndTime = new Date("{{ active_session[11].strftime('%Y-%m-%dT%H:%M:%S') }}Z").getTime();
-
+                // const sessionEndTime = new Date("{{ active_session[11].strftime('%Y-%m-%dT%H:%M:%S') }}Z").getTime();
+                const sessionEndTime = new Date("{{ active_session[11] }}".replace(' ', 'T')).getTime();
+const now = new Date().getTime();
+const maxDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
+const sessionStartTime = sessionEndTime - maxDuration;
+const elapsed = now - sessionStartTime;
+const remaining = maxDuration - elapsed;
 console.log("Current Browser Time:", new Date());
 console.log("Session End Time:", new Date("{{ active_session[11].strftime('%Y-%m-%dT%H:%M:%S') }}"));
 
+                // function updateTimer() {
+                //     const now = new Date().getTime();
+                //     const remaining = sessionEndTime - now;
+
+                //     if (remaining <= 0) {
+                //         document.getElementById('timer').textContent = "Session Closed";
+                //         document.getElementById('timer').style.color = "#888";
+                //         return;
+                //     }
+
+                //     const minutes = Math.floor(remaining / 60000);
+                //     const seconds = Math.floor((remaining % 60000) / 1000);
+                //     document.getElementById('timer').textContent =
+                //         `Closes in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                //     setTimeout(updateTimer, 1000);
+                // }
+
+                // updateTimer();
+
                 function updateTimer() {
-                    const now = new Date().getTime();
-                    const remaining = sessionEndTime - now;
+    const now = new Date().getTime();
+    const sessionEnd = new Date("{{ active_session[11] }}".replace(' ', 'T') + "+00:00").getTime();
+    const remaining = sessionEnd - now;
 
-                    if (remaining <= 0) {
-                        document.getElementById('timer').textContent = "Session Closed";
-                        document.getElementById('timer').style.color = "#888";
-                        return;
-                    }
+    if (remaining <= 0) {
+        document.getElementById('timer').textContent = "Session Closed";
+        document.getElementById('timer').style.color = "#888";
+        location.reload();
+        return;
+    }
 
-                    const minutes = Math.floor(remaining / 60000);
-                    const seconds = Math.floor((remaining % 60000) / 1000);
-                    document.getElementById('timer').textContent =
-                        `Closes in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    document.getElementById('timer').textContent =
+        `Closes in ${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-                    setTimeout(updateTimer, 1000);
-                }
+    setTimeout(updateTimer, 1000);
+}
 
-                updateTimer();
+updateTimer();
             </script>
 
         {% else %}

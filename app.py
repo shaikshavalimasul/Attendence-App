@@ -504,9 +504,83 @@ def start_session():
           four_digit_code, radius, latitude, longitude, start_time, end_time, True))
     conn.commit()
     conn.close()
-
     return redirect(url_for('teacher_dashboard'))
 
+
+
+@app.route('/stop-session', methods=['POST'])
+def stop_session():
+
+    if 'teacher_id' not in session:
+        return redirect(url_for('teacher_login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Find active session
+    cursor.execute("""
+        SELECT session_id
+        FROM sessions
+        WHERE teacher_id = %s
+          AND is_active = TRUE
+        ORDER BY session_id DESC
+        LIMIT 1
+    """, (session['teacher_id'],))
+
+    active = cursor.fetchone()
+
+    if active:
+
+        session_id = active[0]
+
+        # Mark session inactive
+        cursor.execute("""
+            UPDATE sessions
+            SET is_active = FALSE
+            WHERE session_id = %s
+        """, (session_id,))
+
+        # Mark non-submitted students absent
+        cursor.execute("""
+            SELECT student_id
+            FROM student_teacher_mapping
+            WHERE teacher_id = %s
+        """, (session['teacher_id'],))
+
+        students = cursor.fetchall()
+
+        for (student_id,) in students:
+
+            cursor.execute("""
+                SELECT attendance_id
+                FROM attendance
+                WHERE session_id = %s
+                  AND student_id = %s
+            """, (session_id, student_id))
+
+            exists = cursor.fetchone()
+
+            if not exists:
+                cursor.execute("""
+                    INSERT INTO attendance
+                    (session_id,
+                     student_id,
+                     ai_status,
+                     final_status,
+                     confirmed_at)
+                    VALUES
+                    (%s,%s,'Absent','Absent',%s)
+                """, (
+                    session_id,
+                    student_id,
+                    datetime.now()
+                ))
+
+        conn.commit()
+
+    conn.close()
+
+    return redirect(url_for('teacher_dashboard'))
 
 @app.route('/submit-code', methods=['POST'])
 def submit_code():

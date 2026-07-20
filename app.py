@@ -573,7 +573,7 @@ def submit_code():
     conn.commit()
     conn.close()
 
-    return show_student_dashboard(message="Code and location verified! (Selfie verification coming next)", message_type="success")
+    return show_student_dashboard(message="Code and location verified!", message_type="success")
 
 
 
